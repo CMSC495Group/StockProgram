@@ -29,7 +29,7 @@ class StockGui(QMainWindow):
         self.generalLayout.setRowStretch(0, 1)
         self.generalLayout.setRowStretch(1, 0)
         self.centralWidget = QWidget(self)
-        self.centralWidget.setStyleSheet("background-color: #FFFFFF;")
+        self.centralWidget.setStyleSheet("background-image: url(imgs/nyse2.jpg);")
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.generalLayout)
 
@@ -53,23 +53,31 @@ class StockGui(QMainWindow):
         self.indexLayout = QHBoxLayout()
         self.indexWidget.setLayout(self.indexLayout)
         self.indexWidget.setStyleSheet("border: 3px solid black;\
-                                        margin-left: 9px;")
+                                        margin-left: 9px;\
+                                        background-color: rgba(255,255,255,200);\
+                                        background-image: url();")
         self.indexWidget.setFixedSize(1142, 35)
 
         self.indexLabelOne = QLabel("Dow Jones: Loading...")
-        self.indexLabelOne.setFixedSize(255, 20)
+        self.indexLabelOne.setFixedSize(285, 20)
         self.indexLabelOne.setStyleSheet("font-size: 14px;\
-                                          border: none;")
+                                          border: none;\
+                                          background-color: rgba(255,255,255,0);\
+                                          background-image: url();")
 
         self.indexLabelTwo = QLabel("S&P 500: Loading...")
-        self.indexLabelTwo.setFixedSize(245, 20)
+        self.indexLabelTwo.setFixedSize(255, 20)
         self.indexLabelTwo.setStyleSheet("font-size: 14px;\
-                                          border: none;")
+                                          border: none;\
+                                          background-color: rgba(255,255,255,0);\
+                                          background-image: url();")
 
         self.indexLabelThree = QLabel("Nasdaq: Loading...")
-        self.indexLabelThree.setFixedSize(235, 20)
+        self.indexLabelThree.setFixedSize(245, 20)
         self.indexLabelThree.setStyleSheet("font-size: 14px;\
-                                            border: none;")
+                                            border: none;\
+                                            background-color: rgba(255,255,255,0);\
+                                            background-image: url();")
 
         self.indexLayout.addWidget(self.indexLabelOne)
         self.indexLayout.addWidget(self.indexLabelTwo)
@@ -83,7 +91,9 @@ class StockGui(QMainWindow):
         self.leftMainWidget = QWidget()
         self.leftMainLayout = QVBoxLayout()
         self.leftMainWidget.setLayout(self.leftMainLayout)
-        self.leftMainWidget.setStyleSheet("border: None;")
+        self.leftMainWidget.setStyleSheet("border: None;\
+                                          background-color: rgba(255,255,255,0);\
+                                          background-image: url();")
         self.leftMainWidget.setFixedSize(675, 625)
 
         # create chart widget
@@ -99,7 +109,9 @@ class StockGui(QMainWindow):
         self.chartWidget.setFixedSize(655, 400)
         self.chartWidgetLayout = QVBoxLayout()
         self.chartWidget.setLayout(self.chartWidgetLayout)
-        self.chartWidget.setStyleSheet("border:3px solid black;")
+        self.chartWidget.setStyleSheet("border:3px solid black;\
+                                        background-color: rgba(255,255,255,200);\
+                                        background-image: url();")
 
         self.chartTheme = QChart.ChartThemeLight
 
@@ -156,8 +168,6 @@ class StockGui(QMainWindow):
                 self.candleChartSet.setLow(float(self.cellList[x+3].text()[1:])) # Low
                 self.candleChartSet.setClose(float(self.cellList[x+4].text()[1:])) # Close
 
-                # set the hovered signal to this candlestick
-                self.candleChartSet.hovered.connect(self.candleStickMouseHoverEventHandler)
                 #ohlcList.append(self.cellList[x+5]) # Volume 
 
                 self.candleChartSeries.append(self.candleChartSet)
@@ -198,8 +208,6 @@ class StockGui(QMainWindow):
         self.candleChart.setAxisX(self.axisX, self.candleChartSeries) """
 
 
-    def candleStickMouseHoverEventHandler(self):
-        print("Hovered")
         
     """ Controls how pressing the mouse button down and moving the
         mouse makes the chart move """
@@ -258,9 +266,36 @@ class StockGui(QMainWindow):
                     
     def createNewsWidget(self):
         self.newsWidget = QWidget()
+        self.newsWidgetLayout = QGridLayout()
         self.newsWidget.setFixedSize(655, 205)
-        self.newsWidget.setStyleSheet("border: 3px solid black;")
+        self.newsWidget.setStyleSheet("border: 3px solid black;\
+                                       background-color: rgba(255,255,255,200);\
+                                       background-image: url();")
 
+        # make the labels for each headline
+
+        self.headlineOne = QLabel('Test Headline One')
+        self.headlineOne.setFixedSize(300, 30)
+        
+        self.headlineTwo = QLabel('Test Headline Two')
+        self.headlineTwo.setFixedSize(300, 30)
+        
+        self.headlineThree = QLabel('Test Headline Three')
+        self.headlineThree.setFixedSize(300, 30)
+        
+        self.headlineFour = QLabel('Test Headline Four')
+        self.headlineFour.setFixedSize(300, 30)
+        
+        self.headlineFive = QLabel('Test Headline Five')
+        self.headlineFive.setFixedSize(300, 30)
+
+        self.newsWidgetLayout.addWidget(self.headlineOne, 0, 0)
+        self.newsWidgetLayout.addWidget(self.headlineTwo, 1, 0)
+        self.newsWidgetLayout.addWidget(self.headlineThree, 2, 0)
+        self.newsWidgetLayout.addWidget(self.headlineFour, 3, 0)
+        self.newsWidgetLayout.addWidget(self.headlineFive, 4, 0)
+        
+        self.newsWidget.setLayout(self.newsWidgetLayout)
         self.leftMainLayout.addWidget(self.newsWidget)
         
     """ Creates the right main widget that holds
@@ -269,7 +304,9 @@ class StockGui(QMainWindow):
         self.rightMainWidget = QWidget()
         self.rightMainLayout = QVBoxLayout()
         self.rightMainWidget.setLayout(self.rightMainLayout)
-        self.rightMainWidget.setStyleSheet("border: 3px solid black;")
+        self.rightMainWidget.setStyleSheet("border: 3px solid black;\
+                                            background-color: rgba(255,255,255,200);\
+                                            background-image: url();")
         self.rightMainWidget.setFixedSize(455, 605)
 
         self.createTickerSelectorWidget()
@@ -283,7 +320,8 @@ class StockGui(QMainWindow):
         self.tickerSelectorWidget.setFixedSize(430, 50)
         self.tickerSelectorLayout = QHBoxLayout()
         self.tickerSelectorWidget.setLayout(self.tickerSelectorLayout)
-        self.tickerSelectorWidget.setStyleSheet("border: None;")
+        self.tickerSelectorWidget.setStyleSheet("border: None;\
+                                                 background-color: rgba(255,255,255,0);")
 
         # ticker combobox
         self.createTickerComboBoxWidget()
@@ -299,7 +337,8 @@ class StockGui(QMainWindow):
         self.tickerComboBoxWidget.setFixedSize(170, 40)
         self.tickerComboBoxWidgetLayout = QHBoxLayout() # this can really just be any layout so we can add others widgets
         self.tickerComboBoxWidget.setLayout(self.tickerComboBoxWidgetLayout)
-        self.tickerComboBoxWidget.setStyleSheet("border: None;")
+        self.tickerComboBoxWidget.setStyleSheet("border: None;\
+                                                 background-color: rgba(255,255,255,0);")
         
          # ticker combobox
         self.tickerComboBox = QComboBox()
@@ -332,7 +371,8 @@ class StockGui(QMainWindow):
         self.tickerComboBox.setEditable(True)
 
         self.tickerComboBox.setStyleSheet("font-size: 15px;\
-                                           border: 3px solid black;")
+                                           border: 3px solid black;\
+                                           background-color: rgba(255,255,255,200);")
         
         self.tickerComboBoxWidgetLayout.addWidget(self.tickerComboBox)
         
@@ -347,7 +387,8 @@ class StockGui(QMainWindow):
         self.scanButton = QPushButton("GO")
 
         self.scanButton.setStyleSheet("font-size: 15px;\
-                                       border: 3px solid black;")
+                                       border: 3px solid black;\
+                                       background-color: rgba(255,255,255,127);")
 
         self.scanButtonWidgetLayout.addWidget(self.scanButton)
 
@@ -358,12 +399,14 @@ class StockGui(QMainWindow):
         self.predictedCloseWidget.setFixedSize(430 , 50)
         self.predictedCloseWidgetLayout = QHBoxLayout()
         self.predictedCloseWidget.setLayout(self.predictedCloseWidgetLayout)
-        self.predictedCloseWidget.setStyleSheet("border: None;")
+        self.predictedCloseWidget.setStyleSheet("border: None;\
+                                                 background-color: rgba(255,255,255,0);")
         
-        self.predictedLabel = QLabel("Next Predicted Close: $5.00 (-0.02)")
+        self.predictedLabel = QLabel()
         self.predictedLabel.setStyleSheet("font-size: 15px; \
                                            padding-left: 70px;\
-                                           border: 3px solid black;")
+                                           border: 3px solid black;\
+                                           background-color: rgba(255,255,255,0);")
 
         self.predictedCloseWidgetLayout.addWidget(self.predictedLabel)
 
@@ -390,7 +433,8 @@ class StockGui(QMainWindow):
         self.scrollBar = QScrollArea()
 
         self.scrollBar.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.scrollBar.setStyleSheet("border: none;")
+        self.scrollBar.setStyleSheet("border: none;\
+                                      background-color: rgba(255,255,255,0);")
         self.scrollBar.setWidget(self.priceTableWidget)
 
         # set minimum row height for all of the rows

@@ -41,13 +41,13 @@ def updateNews(ticker):
     dataframe['compound'] = dataframe['title'].apply(narrow)
     dataframe['date'] = pd.to_datetime(dataframe.date).dt.date
     
-    return dataframe 
+    return dataframe.head(10)
 
 
 if __name__ == '__main__':
     newsDataFrame = updateNews('aapl')
 
-    print(newsDataFrame)
+    print(newsDataFrame['title'])
 
 
 
