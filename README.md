@@ -18,10 +18,8 @@ Requirements Specification
 
 System Specifications
 
-            Hardware specifications involve a standard PC. The project will most likely be coded 
-            in Python. However, this has not been fully decided. If so, software specifications 
-            will require Python be installed with all required modules. Other languages in mind 
-            are Java and C++. Java will require a recent version of JDK.
+            Hardware specifications involve a standard PC. The project is coded in Python. 
+            Required Python modules are located in requirements.txt
 
 Project Milestones
 
