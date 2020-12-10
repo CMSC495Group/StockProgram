@@ -7,7 +7,7 @@ import pandas as pd
     Using finviz.com and an input ticker, headlines and time stamps are loaded into a dictionary, which sentiment analysis is then performed on.
 """
 
-def updateNews(ticker):
+def getNews(ticker):
 
     urlstart = 'https://finviz.com/quote.ashx?t='
     newsData = {}
@@ -39,15 +39,8 @@ def updateNews(ticker):
 
     narrow = lambda title: vader.polarity_scores(title)['compound']
     dataframe['compound'] = dataframe['title'].apply(narrow)
-    dataframe['date'] = pd.to_datetime(dataframe.date).dt.date
     
-    return dataframe.head(10)
-
-
-if __name__ == '__main__':
-    newsDataFrame = updateNews('aapl')
-
-    print(newsDataFrame['title'])
+    return dataframe.head(50)
 
 
 

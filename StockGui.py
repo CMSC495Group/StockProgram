@@ -21,13 +21,11 @@ class StockGui(QMainWindow):
 
         super().__init__()
         self.setWindowTitle('StockGUI')
-        self.setFixedSize(1160, 680)
+        self.setFixedSize(1260, 680)
 
         # set central widget and general layout
         # we will use a grid layout for the general layout
         self.generalLayout = QGridLayout()
-        self.generalLayout.setRowStretch(0, 1)
-        self.generalLayout.setRowStretch(1, 0)
         self.centralWidget = QWidget(self)
         self.centralWidget.setStyleSheet("background-image: url(imgs/nyse2.jpg);")
         self.setCentralWidget(self.centralWidget)
@@ -53,14 +51,16 @@ class StockGui(QMainWindow):
         self.indexLayout = QHBoxLayout()
         self.indexWidget.setLayout(self.indexLayout)
         self.indexWidget.setStyleSheet("border: 3px solid black;\
+                                        font-weight: bold;\
                                         margin-left: 9px;\
                                         background-color: rgba(255,255,255,200);\
                                         background-image: url();")
-        self.indexWidget.setFixedSize(1142, 35)
+        self.indexWidget.setFixedSize(1242, 35)
 
         self.indexLabelOne = QLabel("Dow Jones: Loading...")
         self.indexLabelOne.setFixedSize(285, 20)
         self.indexLabelOne.setStyleSheet("font-size: 14px;\
+                                          font-weight: bold;\
                                           border: none;\
                                           background-color: rgba(255,255,255,0);\
                                           background-image: url();")
@@ -75,6 +75,7 @@ class StockGui(QMainWindow):
         self.indexLabelThree = QLabel("Nasdaq: Loading...")
         self.indexLabelThree.setFixedSize(245, 20)
         self.indexLabelThree.setStyleSheet("font-size: 14px;\
+                                            font-weight: bold;\
                                             border: none;\
                                             background-color: rgba(255,255,255,0);\
                                             background-image: url();")
@@ -94,7 +95,7 @@ class StockGui(QMainWindow):
         self.leftMainWidget.setStyleSheet("border: None;\
                                           background-color: rgba(255,255,255,0);\
                                           background-image: url();")
-        self.leftMainWidget.setFixedSize(675, 625)
+        self.leftMainWidget.setFixedSize(785, 625)
 
         # create chart widget
         self.createChartWidget()
@@ -106,7 +107,7 @@ class StockGui(QMainWindow):
 
     def createChartWidget(self):
         self.chartWidget = QWidget()
-        self.chartWidget.setFixedSize(655, 400)
+        self.chartWidget.setFixedSize(765, 400)
         self.chartWidgetLayout = QVBoxLayout()
         self.chartWidget.setLayout(self.chartWidgetLayout)
         self.chartWidget.setStyleSheet("border:3px solid black;\
@@ -120,6 +121,7 @@ class StockGui(QMainWindow):
 
         # set the theme of the chart
         self.candleChart.setTheme(self.chartTheme)
+        self.candleChart.setBackgroundVisible(False)
 
         # hide the legend
         self.candleChart.legend().setVisible(False)
@@ -265,37 +267,50 @@ class StockGui(QMainWindow):
             self.candleChart.zoom((e.angleDelta().y() / 120) + 1.9)
                     
     def createNewsWidget(self):
+
         self.newsWidget = QWidget()
-        self.newsWidgetLayout = QGridLayout()
-        self.newsWidget.setFixedSize(655, 205)
+        self.newsWidgetLayout = QVBoxLayout()
+        self.newsWidget.setFixedSize(765, 205)
         self.newsWidget.setStyleSheet("border: 3px solid black;\
-                                       background-color: rgba(255,255,255,200);\
-                                       background-image: url();")
+                                        background-color: rgba(255,255,255,200);\
+                                        background-image: url();")
+
+        
+
+        # the widget that actually holds the headlines and has the scroll bar
+        self.headLineWidget = QWidget()
+        self.headLineWidgetLayout = QVBoxLayout()
+        self.headLineWidget.setFixedSize(1005, 1605)
+        self.headLineWidget.setStyleSheet("border: none;\
+                                           background-color: rgba(255,255,255,0);\
+                                           background-image: url();")
 
         # make the labels for each headline
 
-        self.headlineOne = QLabel('Test Headline One')
-        self.headlineOne.setFixedSize(300, 30)
-        
-        self.headlineTwo = QLabel('Test Headline Two')
-        self.headlineTwo.setFixedSize(300, 30)
-        
-        self.headlineThree = QLabel('Test Headline Three')
-        self.headlineThree.setFixedSize(300, 30)
-        
-        self.headlineFour = QLabel('Test Headline Four')
-        self.headlineFour.setFixedSize(300, 30)
-        
-        self.headlineFive = QLabel('Test Headline Five')
-        self.headlineFive.setFixedSize(300, 30)
+        self.headLineList = []
 
-        self.newsWidgetLayout.addWidget(self.headlineOne, 0, 0)
-        self.newsWidgetLayout.addWidget(self.headlineTwo, 1, 0)
-        self.newsWidgetLayout.addWidget(self.headlineThree, 2, 0)
-        self.newsWidgetLayout.addWidget(self.headlineFour, 3, 0)
-        self.newsWidgetLayout.addWidget(self.headlineFive, 4, 0)
+        for count in range(0, 50):
+            self.headLineList.append(QLabel())
+            self.headLineList[count].setStyleSheet("font-size: 11px;\
+                                                    font-weight: bold;\
+                                                    border: none;\
+                                                    background-color: rgba(255,255,255,0);")
+            self.headLineList[count].setFixedSize(1000, 30)
+            self.headLineWidgetLayout.addWidget(self.headLineList[count])
         
+        # scroll widget for making the widget container scollable
+        self.headLineScrollBar = QScrollArea()
+
+        #self.headLineScrollBar.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.headLineScrollBar.setStyleSheet("background-color: rgba(255,255,255,0);\
+                                              border: none;\
+                                              background-image: url();")
+
+        self.headLineWidget.setLayout(self.headLineWidgetLayout)
         self.newsWidget.setLayout(self.newsWidgetLayout)
+
+        self.headLineScrollBar.setWidget(self.headLineWidget)
+        self.newsWidgetLayout.addWidget(self.headLineScrollBar)
         self.leftMainLayout.addWidget(self.newsWidget)
         
     """ Creates the right main widget that holds
@@ -430,12 +445,12 @@ class StockGui(QMainWindow):
         self.priceTableWidget.setLayout(self.priceTableWidgetLayout)
 
         # scroll widget for making the widget container scollable
-        self.scrollBar = QScrollArea()
+        self.priceScrollBar = QScrollArea()
 
-        self.scrollBar.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.scrollBar.setStyleSheet("border: none;\
+        self.priceScrollBar.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.priceScrollBar.setStyleSheet("border: none;\
                                       background-color: rgba(255,255,255,0);")
-        self.scrollBar.setWidget(self.priceTableWidget)
+        self.priceScrollBar.setWidget(self.priceTableWidget)
 
         # set minimum row height for all of the rows
 
@@ -522,7 +537,7 @@ class StockGui(QMainWindow):
                 rowNumber += 1
         
             
-        self.rightMainLayout.addWidget(self.scrollBar)
+        self.rightMainLayout.addWidget(self.priceScrollBar)
 
 
 def main():

@@ -9,7 +9,7 @@ from PyQt5 import QtCore
 import time
 import random
 from LSTM import LSTMPredictor
-from NewsScraper import updateNews
+from NewsScraper import getNews
 
 """ Controller class that is primarily used to
     handle the different threads that run in the application """
@@ -28,12 +28,14 @@ class GuiCtrl():
         # a variable to set true if a chart has been displayed
         # we will use this variable to delete the chart and display another
         # when the user selects a different ticker
-        self.chartDisplayed = False;
+        self.chartDisplayed = False
+
+        self.currentNews = None
 
         # create instances of each thread
         self.goButtonThread = GoButtonThread(gui, self)
         self.indexThread = IndexThread(self)
-        self.updateCloseThread = UpdateCloseThread(gui, self)
+        self.updateThread = UpdateThread(gui, self)
         self.lstmThread = LSTMThread(self.gui)
 
         # start certain threads at runtime
@@ -51,8 +53,10 @@ class GuiCtrl():
         # connect the goButtonThread signal to update the chart with
         # the function that actually updates the chart
         self.goButtonThread.populateTableSig.connect(self.populateTable)
+        self.goButtonThread.populateNewsSig.connect(self.populateNews)
         self.goButtonThread.lstmSig.connect(self.lstmThread.setStockData)
-        self.updateCloseThread.updateCloseSig.connect(self.updateTable)
+        self.updateThread.updateCloseSig.connect(self.updateTable)
+        self.updateThread.updateNewsSig.connect(self.populateNews)
         self.lstmThread.readyToPredictSig.connect(self.startLSTMThread)
         self.lstmThread.predictionSig.connect(self.updatePredictedPrice)
 
@@ -60,19 +64,19 @@ class GuiCtrl():
         self.goButtonThread.start()
         self.goButtonThread.quit()
         
-        if(self.updateCloseThread.isRunning()):
-            self.stopUpdateCloseThread()
+        if(self.updateThread.isRunning()):
+            self.stopUpdateThread()
 
-        self.startUpdateCloseThread()
+        self.startUpdateThread()
 
-    def startUpdateCloseThread(self):
-        self.updateCloseThread.running = True
-        self.updateCloseThread.start()
+    def startUpdateThread(self):
+        self.updateThread.running = True
+        self.updateThread.start()
 
-    def stopUpdateCloseThread(self):
-        self.updateCloseThread.running = False
-        self.updateCloseThread.ticker = None
-        self.updateCloseThread.quit()
+    def stopUpdateThread(self):
+        self.updateThread.running = False
+        self.updateThread.ticker = None
+        self.updateThread.quit()
 
     def startLSTMThread(self):
         self.lstmThread.start()
@@ -84,9 +88,9 @@ class GuiCtrl():
         if(self.indexThread.isRunning()):
             self.indexThread.running = False
             self.indexThread.quit()
-        if(self.updateCloseThread.isRunning()):
-            self.updateCloseThread.running = False
-            self.updateCloseThread.quit()
+        if(self.updateThread.isRunning()):
+            self.updateThread.running = False
+            self.updateThread.quit()
 
     """ gets and returns a dataframe of stock prices for a given ticker """
     def getTickerPrices(self, ticker):
@@ -190,6 +194,10 @@ class GuiCtrl():
         # update the candlestick chart
         self.gui.updateChartSeries()
 
+        # at this point the go button should still be disabled from the
+        # go button thread. Enable it now
+        self.gui.scanButton.setEnabled(True)
+
     """ updates the close price of the last row in the table"""
     def updateTable(self, ticker):
         stockData = db.select_last_row(self.dbConn, ticker)
@@ -197,7 +205,29 @@ class GuiCtrl():
         if(str(stockData[4]) != self.gui.cellList[10].text()[1:]):
             self.gui.cellList[10].setText("$" + str(stockData[4]))
             self.startLSTMThread()
+
+    def populateNews(self):
+
+        fontColor = None
         
+        for count in range(0, len(self.currentNews)):
+            self.gui.headLineList[count].setText(self.currentNews['date'][count] + " " +
+                                                 self.currentNews['time'][count] + " " +
+                                                 self.currentNews['title'][count])
+
+            # change the text to green if it is a positive sentiment, red if it is negative
+
+            if(self.currentNews['compound'][count] > 0):
+                fontColor = "rgba(153,0,0,255);"
+                
+            elif(self.currentNews['compound'][count] < 0):
+                fontColor = "rgba(0,153,0,255);"
+
+            self.gui.headLineList[count].setStyleSheet("font-size: 11px;\
+                                                    font-weight: bold;\
+                                                    border: none;\
+                                                    background-color: rgba(255,255,255,0);\
+                                                    color: " + fontColor)
 
     def clearTable(self):
         for x in range(6, self.gui.numberOfCells):
@@ -277,6 +307,7 @@ class GuiCtrl():
 class GoButtonThread(QThread):
 
     populateTableSig = pyqtSignal(str)
+    populateNewsSig = pyqtSignal()
     lstmSig = pyqtSignal(str)
 
     def __init__(self, gui, ctrl):
@@ -286,8 +317,15 @@ class GoButtonThread(QThread):
 
 
     def run(self):
+
+        # disable the go button while things are going on so the user
+        # cant spam it and break it
+
+        self.gui.scanButton.setEnabled(False)
+        
         ticker = self.gui.tickerComboBox.currentText()
         stockPrices = self.controller.getTickerPrices(ticker)
+        self.controller.currentNews = getNews(ticker)
         
         # establish a connection to the database
         self.dbConn = db.create_connection('stocksDB.db')
@@ -295,14 +333,17 @@ class GoButtonThread(QThread):
         # put the prices in the database
         db.insert_df(self.dbConn, ticker, stockPrices)
 
-        # send the signal to update the table and start the lstm model
+        # send the signal to update the table, update the news,
+        # and start the lstm model
         self.populateTableSig.emit(ticker)
+        self.populateNewsSig.emit()
         self.lstmSig.emit(ticker)
 
 
-class UpdateCloseThread(QThread):
+class UpdateThread(QThread):
 
     updateCloseSig = pyqtSignal(str)
+    updateNewsSig = pyqtSignal(str)
     
     def __init__(self, gui, ctrl):
         QThread.__init__(self)
@@ -317,19 +358,27 @@ class UpdateCloseThread(QThread):
             if(self.ticker == None):
                 self.ticker = self.gui.tickerComboBox.currentText()
 
-            try:
-                stockData = self.controller.getLastClose(self.ticker)
+            stockData = self.controller.getLastClose(self.ticker)
 
-                self.dbConn = db.create_connection('stocksDB.db')
+            self.dbConn = db.create_connection('stocksDB.db')
 
-                # get the last row so we know which date to use
-                lastRow = db.select_last_row(self.dbConn, self.ticker)
+            # get the last row so we know which date to use
+            lastRow = db.select_last_row(self.dbConn, self.ticker)
                 
-                db.update_cell(self.dbConn, self.ticker, lastRow[0], stockData.iloc[-1]['Close'])
+            db.update_cell(self.dbConn, self.ticker, lastRow[0], stockData.iloc[-1]['Close'])
 
-                self.updateCloseSig.emit(self.ticker)
-            except:
-                print('unable to get last close')
+            self.updateCloseSig.emit(self.ticker)
+
+            # get the news also, if the last headline does not match what we have in the corresponding
+            # label widget then update it
+
+            currentNews = getNews(self.ticker)
+
+            latestHeadline = currentNews['date'].iloc[0] + " " + currentNews['time'].iloc[0] + " " + currentNews['title'].iloc[0]
+
+            if latestHeadline != self.gui.headLineList[0].text():
+                self.controller.currentNews = currentNews
+                self.updateNewsSig.emit()
 
 """ This thread starts when the application is launched and runs until the user
     closes the program. The thread reaches out to Google Finance to update

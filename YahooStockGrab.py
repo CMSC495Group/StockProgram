@@ -154,23 +154,25 @@ def getIndicesGoogle():
 
     url = 'https://finance.google.com'
 
-    try:
-        res = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}, timeout=5)
+    res = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}, timeout=15)
 
-        soup = bs4.BeautifulSoup(res.text, 'html.parser')
+    soup = bs4.BeautifulSoup(res.text, 'html.parser')
 
-        indexNameList = soup.find_all("div", class_="pKBk1e")
-        indexValueList = soup.find_all("div", class_="YMlKec")
-        indexPercentList = soup.find_all("div", class_="JwB6zf V7hZne")
-        indexIncreaseDecreaseList = soup.find_all("span", class_="P2Luy Ez2Ioe")
-
-        indexList = []
-
-        indexList.append(indexNameList[0].text + ": " + indexValueList[0].text + " " + indexIncreaseDecreaseList[0].text + " " + indexPercentList[0].text)
-        indexList.append(indexNameList[2].text + ": " + indexValueList[2].text + " " + indexIncreaseDecreaseList[1].text + " " + indexPercentList[1].text)
-        indexList.append(indexNameList[4].text + ": " + indexValueList[4].text + " " + indexIncreaseDecreaseList[2].text + " " + indexPercentList[2].text)
-
-        return indexList
+    indexNameList = soup.find_all("div", class_="pKBk1e")
     
-    except:
-        return None
+    indexValueList = soup.find_all("div", class_="YMlKec")
+    
+    indexPercentList = soup.find_all("div", class_="JwB6zf V7hZne")
+    
+    indexIncreaseDecreaseList = soup.find_all("span", class_="P2Luy Ebnabc")
+    
+    indexList = []
+
+
+    indexList.append(indexNameList[0].text + ": " + indexValueList[0].text + " " + indexIncreaseDecreaseList[0].text + " " + indexPercentList[0].text)
+    indexList.append(indexNameList[2].text + ": " + indexValueList[2].text + " " + indexIncreaseDecreaseList[1].text + " " + indexPercentList[1].text)
+    indexList.append(indexNameList[4].text + ": " + indexValueList[4].text + " " + indexIncreaseDecreaseList[2].text + " " + indexPercentList[2].text)
+
+    return indexList
+
+        
