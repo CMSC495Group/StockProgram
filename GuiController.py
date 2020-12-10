@@ -304,9 +304,10 @@ class GuiCtrl():
 
     # this function is used by the other threads to show a popup if and when an error
     # occurs during execution
-    def showMessageBox(self, msg, details):
+    def showMessageBox(self, msg, details=None):
         self.gui.messageBox.setText(msg)
-        self.gui.messageBox.setDetailedText(details)
+        if(details != None):
+            self.gui.messageBox.setDetailedText(details)
         self.gui.predictedLabel.setText("")
         self.gui.messageBox.exec()
         
@@ -401,8 +402,7 @@ class UpdateThread(QThread):
                     self.controller.currentNews = currentNews
                     self.updateNewsSig.emit()
             except Exception as e:
-                errorMessage = "Something when wrong while trying to update most recent stock price."
-                self.errorSig.emit(errorMessage, str(e))
+                pass
                 
 
 """ This thread starts when the application is launched and runs until the user
@@ -429,8 +429,7 @@ class IndexThread(QThread):
             try:
                 indexData = getIndicesGoogle()
             except Exception as e:
-                errorMsg = "Error. Could not retrieve index data"
-                self.errorSig.emit(errorMsg, str(e))
+                pass
 
             # do something with the data
             if(indexData):
@@ -473,7 +472,7 @@ class LSTMThread(QThread):
             self.predictionSig.emit(predictedPrice)
         except Exception as e:
             errorMsg = "Something went wrong while making prediction"
-            self.errorSig.emit(errorMsg, str(e))
+            self.gui.predictedLabel.setText(errorMsg)
                                 
     
 

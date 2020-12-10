@@ -1,3 +1,4 @@
+print("Loading Application...")
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QComboBox
 from PyQt5.QtWidgets import QPushButton, QTableWidget, QScrollArea
@@ -557,10 +558,9 @@ def main():
     # show the gui through the controller
     guiCtrl.display()
 
-    # execute Stock Program Application
+    # execute Stock Program Application    
     sys.exit(stockProgram.exec())
 
 
 if __name__ == '__main__':
-
     main()
