@@ -144,7 +144,7 @@ def getYahooData(ticker, startDate, endDate, interval):
         return stockDf
     except:
         error = newDictionary['chart']['error']['description']
-        print(error)
+        #print(error)
 
 """
     Grabs US Stock Indicies Current Value from finance.google.com

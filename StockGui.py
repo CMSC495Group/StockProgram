@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QComboBox
 from PyQt5.QtWidgets import QPushButton, QTableWidget, QScrollArea
 from PyQt5.QtWidgets import QGridLayout, QVBoxLayout, QHBoxLayout
-from PyQt5.QtWidgets import QGraphicsView
+from PyQt5.QtWidgets import QGraphicsView, QMessageBox
 from PyQt5.QtChart import *
 from PyQt5.QtGui import QColor, QPainter
 import sys
@@ -30,6 +30,11 @@ class StockGui(QMainWindow):
         self.centralWidget.setStyleSheet("background-image: url(imgs/nyse2.jpg);")
         self.setCentralWidget(self.centralWidget)
         self.centralWidget.setLayout(self.generalLayout)
+
+        # this message box is used to inform the user of any errors that happen
+        self.messageBox = QMessageBox()
+        self.messageBox.setIcon(QMessageBox.Warning)
+        self.messageBox.setWindowTitle("ERROR")
 
         # the central widget will have three smaller widgets inside
         # add leftWidget, rightWidget, and indexWidget to central widget

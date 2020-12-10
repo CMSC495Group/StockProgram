@@ -50,15 +50,17 @@ class GuiCtrl():
         as they are called. Connects them to their respective functions """
     def connectSignals(self):
         self.gui.scanButton.clicked.connect(self.startGoButtonThread)
-        # connect the goButtonThread signal to update the chart with
-        # the function that actually updates the chart
         self.goButtonThread.populateTableSig.connect(self.populateTable)
         self.goButtonThread.populateNewsSig.connect(self.populateNews)
         self.goButtonThread.lstmSig.connect(self.lstmThread.setStockData)
+        self.goButtonThread.errorSig.connect(self.showMessageBox)
         self.updateThread.updateCloseSig.connect(self.updateTable)
         self.updateThread.updateNewsSig.connect(self.populateNews)
+        self.updateThread.errorSig.connect(self.showMessageBox)
         self.lstmThread.readyToPredictSig.connect(self.startLSTMThread)
         self.lstmThread.predictionSig.connect(self.updatePredictedPrice)
+        self.lstmThread.errorSig.connect(self.showMessageBox)
+        self.indexThread.errorSig.connect(self.showMessageBox)
 
     def startGoButtonThread(self):
         self.goButtonThread.start()
@@ -208,7 +210,7 @@ class GuiCtrl():
 
     def populateNews(self):
 
-        fontColor = None
+        fontColor = "rgba(0,0,0,0);"
         
         for count in range(0, len(self.currentNews)):
             self.gui.headLineList[count].setText(self.currentNews['date'][count] + " " +
@@ -299,6 +301,14 @@ class GuiCtrl():
 
     def updatePredictedPrice(self, price):
         self.gui.predictedLabel.setText("      Next Predicted Close: $" + str(round(price, 2)))
+
+    # this function is used by the other threads to show a popup if and when an error
+    # occurs during execution
+    def showMessageBox(self, msg, details):
+        self.gui.messageBox.setText(msg)
+        self.gui.messageBox.setDetailedText(details)
+        self.gui.predictedLabel.setText("")
+        self.gui.messageBox.exec()
         
     
 """ Thread that handles making the initial price data pull,
@@ -309,6 +319,7 @@ class GoButtonThread(QThread):
     populateTableSig = pyqtSignal(str)
     populateNewsSig = pyqtSignal()
     lstmSig = pyqtSignal(str)
+    errorSig = pyqtSignal(str, str)
 
     def __init__(self, gui, ctrl):
         QThread.__init__(self)
@@ -324,26 +335,35 @@ class GoButtonThread(QThread):
         self.gui.scanButton.setEnabled(False)
         
         ticker = self.gui.tickerComboBox.currentText()
-        stockPrices = self.controller.getTickerPrices(ticker)
-        self.controller.currentNews = getNews(ticker)
+
+        try:
         
-        # establish a connection to the database
-        self.dbConn = db.create_connection('stocksDB.db')
+            stockPrices = self.controller.getTickerPrices(ticker)
+            self.controller.currentNews = getNews(ticker)
+        
+            # establish a connection to the database
+            self.dbConn = db.create_connection('stocksDB.db')
 
-        # put the prices in the database
-        db.insert_df(self.dbConn, ticker, stockPrices)
+            # put the prices in the database
+            db.insert_df(self.dbConn, ticker, stockPrices)
 
-        # send the signal to update the table, update the news,
-        # and start the lstm model
-        self.populateTableSig.emit(ticker)
-        self.populateNewsSig.emit()
-        self.lstmSig.emit(ticker)
+            # send the signal to update the table, update the news,
+            # and start the lstm model
+            self.populateTableSig.emit(ticker)
+            self.populateNewsSig.emit()
+            self.lstmSig.emit(ticker)
+
+        except Exception as e:
+            errorMsg = "Unable to retrieve data for ticker: " + ticker
+            self.gui.scanButton.setEnabled(True)
+            self.errorSig.emit(errorMsg, str(e))
 
 
 class UpdateThread(QThread):
 
     updateCloseSig = pyqtSignal(str)
     updateNewsSig = pyqtSignal(str)
+    errorSig = pyqtSignal(str, str)
     
     def __init__(self, gui, ctrl):
         QThread.__init__(self)
@@ -358,32 +378,39 @@ class UpdateThread(QThread):
             if(self.ticker == None):
                 self.ticker = self.gui.tickerComboBox.currentText()
 
-            stockData = self.controller.getLastClose(self.ticker)
+            try:
+                stockData = self.controller.getLastClose(self.ticker)
 
-            self.dbConn = db.create_connection('stocksDB.db')
+                self.dbConn = db.create_connection('stocksDB.db')
 
-            # get the last row so we know which date to use
-            lastRow = db.select_last_row(self.dbConn, self.ticker)
+                # get the last row so we know which date to use
+                lastRow = db.select_last_row(self.dbConn, self.ticker)
+                    
+                db.update_cell(self.dbConn, self.ticker, lastRow[0], stockData.iloc[-1]['Close'])
+
+                self.updateCloseSig.emit(self.ticker)
+
+                # get the news also, if the last headline does not match what we have in the corresponding
+                # label widget then update it
+
+                currentNews = getNews(self.ticker)
+
+                latestHeadline = currentNews['date'].iloc[0] + " " + currentNews['time'].iloc[0] + " " + currentNews['title'].iloc[0]
+
+                if latestHeadline != self.gui.headLineList[0].text():
+                    self.controller.currentNews = currentNews
+                    self.updateNewsSig.emit()
+            except Exception as e:
+                errorMessage = "Something when wrong while trying to update most recent stock price."
+                self.errorSig.emit(errorMessage, str(e))
                 
-            db.update_cell(self.dbConn, self.ticker, lastRow[0], stockData.iloc[-1]['Close'])
-
-            self.updateCloseSig.emit(self.ticker)
-
-            # get the news also, if the last headline does not match what we have in the corresponding
-            # label widget then update it
-
-            currentNews = getNews(self.ticker)
-
-            latestHeadline = currentNews['date'].iloc[0] + " " + currentNews['time'].iloc[0] + " " + currentNews['title'].iloc[0]
-
-            if latestHeadline != self.gui.headLineList[0].text():
-                self.controller.currentNews = currentNews
-                self.updateNewsSig.emit()
 
 """ This thread starts when the application is launched and runs until the user
     closes the program. The thread reaches out to Google Finance to update
     the S&P 500, DOW 30, and NASDAQ stock indices every few seconds """
 class IndexThread(QThread):
+
+    errorSig = pyqtSignal(str, str)
 
     def __init__(self, ctrl):
         QThread.__init__(self)
@@ -402,8 +429,8 @@ class IndexThread(QThread):
             try:
                 indexData = getIndicesGoogle()
             except Exception as e:
-                print("Could not pull google data")
-                print(e)
+                errorMsg = "Error. Could not retrieve index data"
+                self.errorSig.emit(errorMsg, str(e))
 
             # do something with the data
             if(indexData):
@@ -415,6 +442,7 @@ class LSTMThread(QThread):
 
     readyToPredictSig = pyqtSignal()
     predictionSig = pyqtSignal(float)
+    errorSig = pyqtSignal(str, str)
 
     def __init__(self, gui):
         QThread.__init__(self)
@@ -437,11 +465,15 @@ class LSTMThread(QThread):
         
         
     def run(self):
-        self.gui.predictedLabel.setText("              Making Prediction...")
-        self.lstm.trainNetwork()
-        previousClosePrice = self.lstm.stockData['Close'][len(self.lstm.stockData['Close'])-1]
-        predictedPrice = self.lstm.predict(previousClosePrice)
-        self.predictionSig.emit(predictedPrice)
+        try:
+            self.gui.predictedLabel.setText("              Making Prediction...")
+            self.lstm.trainNetwork()
+            previousClosePrice = self.lstm.stockData['Close'][len(self.lstm.stockData['Close'])-1]
+            predictedPrice = self.lstm.predict(previousClosePrice)
+            self.predictionSig.emit(predictedPrice)
+        except Exception as e:
+            errorMsg = "Something went wrong while making prediction"
+            self.errorSig.emit(errorMsg, str(e))
                                 
     
 
