@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import nltk
+nltk.download('vader_lexicon')
 import pandas as pd
 
 """
@@ -8,7 +10,7 @@ import pandas as pd
 """
 
 def getNews(ticker):
-
+    
     urlstart = 'https://finviz.com/quote.ashx?t='
     newsData = {}
     dataDictionary = {}
